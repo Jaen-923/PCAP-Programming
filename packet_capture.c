@@ -60,15 +60,15 @@ void print_mac_address(unsigned char *mac) {
 // 패킷 캡쳐
 void got_packet(u_char *user_data, const struct pcap_pkthdr *pkthdr, const u_char *packet) {
     struct ether_header *eth_header = (struct ether_header *)packet;  
-    struct ip *ip_header = (struct ip *)(packet + 14);  
-    struct tcphdr *tcp_header = (struct tcphdr *)(packet + 14 + (ip_header->ip_hl << 2));  
+    struct ip *ip_header = (struct ip *)(packet + sizeof(struct ether_header));  
+    struct tcphdr *tcp_header = (struct tcphdr *)(packet + sizeof(struct ether_header) + (ip_header->ip_hl << 2));  
     
-    unsigned char *data = (unsigned char *)(packet + 14 + (ip_header->ip_hl << 2) + (tcp_header->th_off << 2));  
+    unsigned char *data = (unsigned char *)(packet + sizeof(struct ether_header) + (ip_header->ip_hl << 2) + (tcp_header->th_off << 2));  
 
-    int data_len = pkthdr->len - (14 + (ip_header->ip_hl << 2) + (tcp_header->th_off << 2));  
+    int data_len = pkthdr->len - (sizeof(struct ether_header) + (ip_header->ip_hl << 2) + (tcp_header->th_off << 2));  
 
     // Ethernet Header 출력
-    printf("\n===========================\n\n");
+    printf("\n================================\n\n");
     printf("Ethernet Header\n");
     printf("Src MAC: ");
     print_mac_address(eth_header->ether_shost);  
@@ -100,9 +100,15 @@ int main() {
     const u_char *packet;
     char errbuf[PCAP_ERRBUF_SIZE];
     char filter_exp[] = "tcp port 80";  
+    char network_interface[100];
 
-    handle = pcap_open_live("enX0", BUFSIZ, 1, 1000, errbuf);
+    printf("enter the network interface: ");
+    scanf("%s", network_interface);
+
+
+    handle = pcap_open_live(network_interface, BUFSIZ, 1, 1000, errbuf);
     if (handle == NULL) {
+        printf("Could not open interface: %s\n", errbuf);
         return 1;
     }
 
